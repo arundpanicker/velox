@@ -821,5 +821,57 @@ TEST_F(ArithmeticTest, wilsonIntervalUpper) {
   EXPECT_DOUBLE_EQ(wilsonIntervalUpper(1, 3, kInf).value(), 1.0);
 }
 
+TEST_F(ArithmeticTest, cosineSimilarity) {
+  auto data = makeRowVector(
+      {makeMapVector<StringView, double>(
+           {{{"c", 20}, {"a", 10}, {"b", 30}},
+            {{"a", 1.0}, {"b", 3.0}, {"c", 2.0}},
+            {{"a", 1.0}, {"b", 2.5}, {"c", 0}},
+            {{"a", 1.0}, {"b", 2.5}, {"c", 9.0}},
+            {{"a", 1.0}, {"b", 2.5}, {"c", 9.0}},
+            {{"x1", 1.0}, {"x2", 3.0}, {"x3", 2.0}, {"x4", 2.0}, {"x5", 5.0}},
+            {{"a", 1.0}, {"", 2.5}, {"c", 9.0}},
+            {},
+            {{}},
+            {{"a", std::nullopt}, {"b", 2.5}, {"c", 9.0}},
+            {},
+            {},
+            {{"a", kInf}},
+            {{"a", kInf}}}),
+       makeMapVector<StringView, double>(
+           {{{"a", 1}, {"b", 3}, {"c", 2}},
+            {{"a", -5}, {"b", -15}, {"c", -10}},
+            {{"a", -2.0}, {"b", -5.0}, {"d", kNan}},
+            {{"d", -2.5}, {"e", 3.0}},
+            {{"a", -2.0}, {"b", -5.0}},
+            {{"x2", 3.0}, {"x5", 8.5}},
+            {{"a", -2.0}, {"b", -5.0}},
+            {{"a", -2.0}, {"b", -5.0}},
+            {{"a", -2.0}, {"b", -5.0}},
+            {{"a", -2.0}, {"b", -5.0}},
+            {},
+            {{}},
+            {{"a", kInf}},
+            {{"b", kInf}}})});
+
+  auto expectedResult = makeNullableFlatVector<double>(
+      {1.0,
+       -1.0,
+       kNan,
+       0,
+       -0.28662340187822993,
+       0.87128716494189595,
+       -0.039534262328031713,
+       kNan,
+       std::nullopt,
+       std::nullopt,
+       kNan,
+       std::nullopt,
+       kNan,
+       0.0});
+  auto result = evaluate<FlatVector<double>>("cosine_similarity(c0, c1)", data);
+  test::assertEqualVectors(expectedResult, result);
+}
+
 } // namespace
 } // namespace facebook::velox

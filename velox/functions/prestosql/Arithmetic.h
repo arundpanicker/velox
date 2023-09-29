@@ -329,6 +329,68 @@ struct WidthBucketFunction {
   }
 };
 
+template <typename TExecParams>
+struct CosineSimilarityFunction {
+  VELOX_DEFINE_FUNCTION_TYPES(TExecParams);
+
+  FOLLY_ALWAYS_INLINE bool mapL2Norm(
+      double& norm,
+      const arg_type<Map<Varchar, double>>& dataMap) {
+    norm = std::numeric_limits<double>::quiet_NaN();
+    if (dataMap.size() > 0) {
+      norm = 0.0;
+      for (const auto& [key, value] : dataMap) {
+        if (value.has_value()) {
+          norm += value.value() * value.value();
+        } else {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  FOLLY_ALWAYS_INLINE double mapDotProduct(
+      const arg_type<Map<Varchar, double>>& leftMap,
+      const arg_type<Map<Varchar, double>>& rightMap) {
+    double dotProduct = 0.0;
+
+    for (const auto& [key, value] : leftMap) {
+      if (value.has_value()) {
+        auto rposition = rightMap.find(key);
+        if (rposition != rightMap.end()) {
+          if (rposition->second.has_value()) {
+            dotProduct += value.value() * rposition->second.value();
+          }
+        }
+      }
+    }
+    return dotProduct;
+  }
+
+  FOLLY_ALWAYS_INLINE bool call(
+      double& result,
+      const arg_type<Map<Varchar, double>>& leftMap,
+      const arg_type<Map<Varchar, double>>& rightMap) {
+    double normLeftMap;
+    double normRightMap;
+    auto isLeftMapNull = mapL2Norm(normLeftMap, leftMap);
+    auto isRightMapNull = mapL2Norm(normRightMap, rightMap);
+
+    if (!(isLeftMapNull || isRightMapNull)) {
+      if (std::isnan(normLeftMap) || std::isnan(normRightMap)) {
+        result = std::numeric_limits<double>::quiet_NaN();
+      } else {
+        auto dotProduct = mapDotProduct(leftMap, rightMap);
+        result = dotProduct / std::sqrt(normLeftMap * normRightMap);
+      }
+    } else {
+      return false;
+    }
+    return true;
+  }
+};
+
 template <typename T>
 struct RadiansFunction {
   FOLLY_ALWAYS_INLINE void call(double& result, double a) {

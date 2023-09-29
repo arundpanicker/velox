@@ -101,6 +101,11 @@ void registerSimpleFunctions(const std::string& prefix) {
   registerFunction<TruncateFunction, double, double>({prefix + "truncate"});
   registerFunction<TruncateFunction, double, double, int32_t>(
       {prefix + "truncate"});
+  registerFunction<
+      CosineSimilarityFunction,
+      double,
+      Map<Varchar, double>,
+      Map<Varchar, double>>({prefix + "cosine_similarity"});
   registerFunction<BetaCDFFunction, double, double, double, double>(
       {prefix + "beta_cdf"});
   registerFunction<NormalCDFFunction, double, double, double, double>(

@@ -156,6 +156,9 @@ int main(int argc, char** argv) {
       // and cluster ids 0 to n - 1, which the fuzzer does not generate.
       "vector_index_pack",
       "reservoir_sample",
+      // The reservoir-sampling signatures are randomized. Skip lists are
+      // name-based, so the deterministic histogram signature is skipped too.
+      "differential_entropy",
       // https://github.com/facebookincubator/velox/issues/13547
       "merge",
       // https://github.com/facebookincubator/velox/issues/14423
